@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>사자성어 맞추기 게임 (Four-Character Idiom Quiz)</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Noto Sans KR -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700;900&display=swap" rel="stylesheet">
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Noto Sans KR', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#fdf8f6',
+              100: '#f2e8e5',
+              500: '#e05638',
+              600: '#ca3e23',
+              700: '#a82c14',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .custom-shadow {
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+    }
+    @keyframes pulse-subtle {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.03); }
+    }
+    .animate-pulse-subtle {
+      animation: pulse-subtle 2s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="bg-amber-50/60 min-h-screen text-slate-800 flex flex-col justify-between">
+
+  <!-- Header -->
+  <header class="w-full bg-white/80 backdrop-blur border-b border-amber-200/60 py-4 px-6 sticky top-0 z-10 shadow-sm">
+    <div class="max-w-md mx-auto flex justify-between items-center">
+      <div class="flex items-center gap-2">
+        <span class="bg-brand-500 text-white font-black text-xs px-2.5 py-1 rounded-full uppercase tracking-wider">Quiz</span>
+        <h1 class="font-bold text-lg text-slate-800 tracking-tight">사자성어 마스터</h1>
+      </div>
+      <button id="restart-header-btn" onclick="goToStartScreen()" class="text-xs text-amber-800 hover:text-brand-600 font-medium flex items-center gap-1 transition">
+        <i class="fa-solid fa-house"></i> 처음으로
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="w-full max-w-md mx-auto p-4 my-auto flex-grow flex flex-col justify-center">
+
+    <!-- 1. START SCREEN -->
+    <div id="start-screen" class="bg-white rounded-3xl p-6 sm:p-8 custom-shadow border border-amber-100 text-center space-y-6">
+      <div class="inline-flex items-center justify-center w-20 h-20 bg-brand-50 text-brand-500 rounded-full mb-2">
+        <i class="fa-solid fa-scroll text-4xl"></i>
+      </div>
+
+      <div>
+        <h2 class="text-2xl font-extrabold text-slate-900 mb-2">사자성어 맞추기</h2>
+        <p class="text-slate-500 text-sm leading-relaxed">
+          4글자 사자성어의 일부가 힌트로 제공됩니다.<br>
+          빈칸에 들어갈 2글자를 맞아보세요!
+        </p>
+      </div>
+
+      <!-- Settings / Options -->
+      <div class="bg-amber-50/80 p-4 rounded-2xl text-left space-y-4 border border-amber-200/50">
+        <div>
+          <label class="block text-xs font-bold text-amber-900 uppercase mb-2">
+            <i class="fa-solid fa-keyboard mr-1"></i> 문제 풀이 방식 선택
+          </label>
+          <div class="grid grid-cols-2 gap-2">
+            <button type="button" id="mode-choice" onclick="selectInputMode('choice')" class="py-3 px-3 rounded-xl border-2 font-bold text-sm transition text-center flex flex-col items-center gap-1 border-brand-500 bg-brand-50 text-brand-600">
+              <i class="fa-solid fa-list-check text-base"></i>
+              4지선다 (객관식)
+            </button>
+            <button type="button" id="mode-input" onclick="selectInputMode('input')" class="py-3 px-3 rounded-xl border-2 font-bold text-sm transition text-center flex flex-col items-center gap-1 border-slate-200 bg-white text-slate-600 hover:border-slate-300">
+              <i class="fa-solid fa-pen text-base"></i>
+              직접 입력 (주관식)
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="pt-2">
+        <button onclick="startGame()" class="w-full py-4 bg-brand-500 hover:bg-brand-600 active:scale-[0.98] text-white font-bold text-lg rounded-2xl shadow-lg shadow-brand-500/30 transition duration-150 flex items-center justify-center gap-2 animate-pulse-subtle">
+          <i class="fa-solid fa-play"></i> 게임 시작하기
+        </button>
+      </div>
+    </div>
+
+
+    <!-- 2. QUIZ SCREEN -->
+    <div id="quiz-screen" class="hidden bg-white rounded-3xl p-6 custom-shadow border border-amber-100 flex-col space-y-5">
+      
+      <!-- Top Info Bar -->
+      <div class="flex justify-between items-center text-sm text-slate-500 pb-2 border-b border-slate-100">
+        <div class="font-bold text-brand-600 flex items-center gap-1">
+          <span class="text-xs bg-brand-100 text-brand-600 px-2 py-0.5 rounded-md">문제</span>
+          <span id="current-q-num" class="text-base">1</span> / 10
+        </div>
+        <div class="flex items-center gap-3">
+          <div class="flex items-center gap-1 font-semibold text-slate-600">
+            <i class="fa-regular fa-clock text-amber-500"></i>
+            <span id="timer-display">00:00</span>
+          </div>
+          <div class="flex items-center gap-1 font-bold text-emerald-600">
+            <i class="fa-solid fa-star text-amber-400"></i>
+            <span id="score-display">0</span>점
+          </div>
+        </div>
+      </div>
+
+      <!-- Progress Bar -->
+      <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+        <div id="progress-bar" class="bg-brand-500 h-full w-0 transition-all duration-300"></div>
+      </div>
+
+      <!-- Hint Badge -->
+      <div class="text-center pt-2">
+        <span id="hint-type-badge" class="inline-block bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1 rounded-full">
+          앞 2글자 힌트
+        </span>
+      </div>
+
+      <!-- Question Cards Display -->
+      <div class="py-4">
+        <div class="grid grid-cols-4 gap-2 sm:gap-3 text-center">
+          <!-- Char 1 -->
+          <div id="char-1" class="bg-amber-50 border-2 border-amber-200 rounded-2xl aspect-square flex flex-col items-center justify-center p-1">
+            <span class="text-xs text-slate-400 font-serif" id="hanja-1">-</span>
+            <span class="text-2xl sm:text-3xl font-extrabold text-slate-800" id="hangul-1">?</span>
+          </div>
+          <!-- Char 2 -->
+          <div id="char-2" class="bg-amber-50 border-2 border-amber-200 rounded-2xl aspect-square flex flex-col items-center justify-center p-1">
+            <span class="text-xs text-slate-400 font-serif" id="hanja-2">-</span>
+            <span class="text-2xl sm:text-3xl font-extrabold text-slate-800" id="hangul-2">?</span>
+          </div>
+          <!-- Char 3 -->
+          <div id="char-3" class="bg-amber-50 border-2 border-amber-200 rounded-2xl aspect-square flex flex-col items-center justify-center p-1">
+            <span class="text-xs text-slate-400 font-serif" id="hanja-3">-</span>
+            <span class="text-2xl sm:text-3xl font-extrabold text-slate-800" id="hangul-3">?</span>
+          </div>
+          <!-- Char 4 -->
+          <div id="char-4" class="bg-amber-50 border-2 border-amber-200 rounded-2xl aspect-square flex flex-col items-center justify-center p-1">
+            <span class="text-xs text-slate-400 font-serif" id="hanja-4">-</span>
+            <span class="text-2xl sm:text-3xl font-extrabold text-slate-800" id="hangul-4">?</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Input Area: Multiple Choice -->
+      <div id="choice-area" class="grid grid-cols-2 gap-3 pt-2">
+        <button onclick="submitChoice(0)" class="choice-btn p-3.5 bg-slate-50 hover:bg-amber-50 border-2 border-slate-200 hover:border-amber-400 active:scale-95 rounded-2xl font-bold text-lg text-slate-800 transition flex items-center justify-center">
+          <span id="choice-0-text">-</span>
+        </button>
+        <button onclick="submitChoice(1)" class="choice-btn p-3.5 bg-slate-50 hover:bg-amber-50 border-2 border-slate-200 hover:border-amber-400 active:scale-95 rounded-2xl font-bold text-lg text-slate-800 transition flex items-center justify-center">
+          <span id="choice-1-text">-</span>
+        </button>
+        <button onclick="submitChoice(2)" class="choice-btn p-3.5 bg-slate-50 hover:bg-amber-50 border-2 border-slate-200 hover:border-amber-400 active:scale-95 rounded-2xl font-bold text-lg text-slate-800 transition flex items-center justify-center">
+          <span id="choice-2-text">-</span>
+        </button>
+        <button onclick="submitChoice(3)" class="choice-btn p-3.5 bg-slate-50 hover:bg-amber-50 border-2 border-slate-200 hover:border-amber-400 active:scale-95 rounded-2xl font-bold text-lg text-slate-800 transition flex items-center justify-center">
+          <span id="choice-3-text">-</span>
+        </button>
+      </div>
+
+      <!-- Input Area: Subjective Typing -->
+      <div id="input-area" class="hidden space-y-3 pt-2">
+        <div class="relative">
+          <input type="text" id="text-answer-input" maxlength="2" placeholder="빈칸 2글자 입력 (예: 무환)" 
+            class="w-full p-4 border-2 border-slate-200 rounded-2xl text-center text-lg font-bold placeholder:text-slate-300 focus:border-brand-500 focus:outline-none transition">
+        </div>
+        <button onclick="submitTextAnswer()" class="w-full py-3.5 bg-brand-500 hover:bg-brand-600 active:scale-95 text-white font-bold rounded-2xl shadow transition">
+          정답 제출하기
+        </button>
+      </div>
+
+    </div>
+
+    <!-- 3. EXPLANATION MODAL / OVERLAY -->
+    <div id="explanation-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+      <div class="bg-white rounded-3xl max-w-sm w-full p-6 custom-shadow text-center space-y-4 animate-in fade-in zoom-in duration-200">
+        
+        <!-- Feedback Icon -->
+        <div id="modal-feedback-badge" class="inline-flex items-center justify-center w-16 h-16 rounded-full mb-1">
+          <i id="modal-feedback-icon" class="text-3xl"></i>
+        </div>
+
+        <div>
+          <h3 id="modal-feedback-title" class="text-xl font-extrabold text-slate-800 mb-1">정답입니다!</h3>
+          <p id="modal-feedback-subtitle" class="text-xs text-slate-400">사자성어 상세 뜻풀이</p>
+        </div>
+
+        <!-- Full Idiom Box -->
+        <div class="bg-amber-50 p-4 rounded-2xl border border-amber-200/80">
+          <div id="modal-hanja" class="text-sm font-serif text-amber-800 tracking-wider mb-0.5">有備無患</div>
+          <div id="modal-hangul" class="text-2xl font-black text-slate-900 mb-2">유비무환</div>
+          <p id="modal-meaning" class="text-xs sm:text-sm text-slate-600 leading-relaxed font-medium">
+            미리 준비해 두면 뒷걱정이 없다는 뜻.
+          </p>
+        </div>
+
+        <button onclick="nextQuestion()" class="w-full py-3.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-2xl transition flex items-center justify-center gap-2">
+          다음 문제 <i class="fa-solid fa-arrow-right text-xs"></i>
+        </button>
+      </div>
+    </div>
+
+
+    <!-- 4. RESULT SCREEN -->
+    <div id="result-screen" class="hidden bg-white rounded-3xl p-6 sm:p-8 custom-shadow border border-amber-100 text-center space-y-6">
+      
+      <div class="inline-flex items-center justify-center w-20 h-20 bg-amber-100 text-amber-600 rounded-full">
+        <i class="fa-solid fa-trophy text-4xl"></i>
+      </div>
+
+      <div>
+        <h2 class="text-2xl font-extrabold text-slate-900 mb-1">퀴즈 완료!</h2>
+        <p class="text-slate-400 text-xs">수고하셨습니다. 나의 최종 결과는?</p>
+      </div>
+
+      <!-- Score Metrics Card -->
+      <div class="bg-amber-50/70 p-5 rounded-2xl border border-amber-200/60 grid grid-cols-2 gap-4">
+        <div class="border-r border-amber-200/60 pr-2">
+          <div class="text-xs font-bold text-slate-400 mb-1">최종 점수</div>
+          <div class="text-3xl font-black text-brand-600">
+            <span id="final-score">0</span><span class="text-sm font-normal text-slate-500">점</span>
+          </div>
+        </div>
+        <div class="pl-2">
+          <div class="text-xs font-bold text-slate-400 mb-1">총 소요 시간</div>
+          <div class="text-2xl font-extrabold text-slate-800 mt-1" id="final-time">
+            00:00
+          </div>
+        </div>
+      </div>
+
+      <!-- Score Evaluation Message -->
+      <p id="final-eval-msg" class="text-sm font-semibold text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-100">
+        대단해요! 사자성어 박사이시네요! 🎓
+      </p>
+
+      <div class="space-y-2 pt-2">
+        <button onclick="startGame()" class="w-full py-4 bg-brand-500 hover:bg-brand-600 active:scale-[0.98] text-white font-bold text-lg rounded-2xl shadow-lg shadow-brand-500/30 transition flex items-center justify-center gap-2">
+          <i class="fa-solid fa-rotate-right"></i> 다시 도전하기
+        </button>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="w-full text-center py-4 text-xs text-slate-400 border-t border-amber-100 bg-white/40">
+    사자성어 퀴즈 웹앱 &copy; 2026
+  </footer>
+
+  <!-- JavaScript Logic -->
+  <script>
+    // -------------------------------------------------------------
+    // Data Repository (20+ Representative Four-Character Idioms)
+    // -------------------------------------------------------------
+    const IDIOM_DATABASE = [
+      { hangul: "유비무환", hanja: "有備無患", meaning: "미리 준비가 되어 있으면 걱정할 것이 없음." },
+      { hangul: "대기만성", hanja: "大器晚成", meaning: "큰 인물은 늦게 이루어진다는 뜻으로, 만년이 될수록 크게 성공함." },
+      { hangul: "일석이조", hanja: "一石二鳥", meaning: "돌 한 개를 던져 새 두 마리를 잡는다는 뜻으로, 한 가지 일로 두 가지 이득을 얻음." },
+      { hangul: "동고동락", hanja: "同苦同樂", meaning: "괴로움도 즐거움도 함께함." },
+      { hangul: "고진감래", hanja: "苦盡甘來", meaning: "쓴 것이 다하면 단 것이 온다는 뜻으로, 고생 끝에 낙이 온다." },
+      { hangul: "역지사지", hanja: "易地思之", meaning: "처지를 바꾸어 생각하여 봄." },
+      { hangul: "과유불급", hanja: "過猶不及", meaning: "정도에 지나침은 미치지 못함과 같음." },
+      { hangul: "새옹지마", hanja: "塞翁之馬", meaning: "인생의 길흉화복은 변수가 많아 예측하기 어려움." },
+      { hangul: "초지일관", hanja: "初志一貫", meaning: "처음에 세운 뜻을 끝까지 밀고 나감." },
+      { hangul: "자업자득", hanja: "自業自得", meaning: "자기가 저지른 일의 결과를 자기가 받음." },
+      { hangul: "청출어람", hanja: "青出於藍", meaning: "제자가 스승보다 나음을 이르는 말." },
+      { hangul: "심심상인", hanja: "心心相印", meaning: "말없이 마음과 마음이 서로 통함." },
+      { hangul: "다다익선", hanja: "多多益善", meaning: "많으면 많을수록 더욱 좋음." },
+      { hangul: "우이독경", hanja: "牛耳讀經", meaning: "소의 귀에 경 읽기라는 뜻으로, 아무리 말해도 알아듣지 못함." },
+      { hangul: "십시일반", hanja: "十匙一飯", meaning: "열 숟가락의 밥이 한 릇이 된다는 뜻으로, 여럿이 힘을 합쳐 도움." },
+      { hangul: "칠전팔기", hanja: "七顛八起", meaning: "일곱 번 넘어져도 여덟 번 일어난다는 뜻으로, 굴하지 않고 계속 도전함." },
+      { hangul: "화사첨족", hanja: "畫蛇添足", meaning: "뱀을 그리는데 발을 덧붙인다는 뜻으로, 쓸데없는 짓을 하여 도리어 망침." },
+      { hangul: "금상첨화", hanja: "錦上添花", meaning: "비단 위에 꽃을 더한다는 뜻으로, 좋은 일 위에 좋은 일이 겹침." },
+      { hangul: "설상가상", hanja: "雪上加霜", meaning: "눈 위에 서리가 더해진다는 뜻으로, 불행이 거듭됨." },
+      { hangul: "천고마비", hanja: "天高馬肥", meaning: "하늘은 높고 말은 찌운다는 뜻으로, 가을 계절이 무척 풍요롭고 좋은 때임." }
+    ];
+
+    // Game Configuration & State Variables
+    let selectedInputMode = 'choice'; // 'choice' or 'input'
+    let currentQuizList = [];
+    let currentQuestionIndex = 0;
+    let score = 0;
+    let timerInterval = null;
+    let secondsElapsed = 0;
+
+    // Current Question Details
+    let currentIdiom = null;
+    let hintType = 'front'; // 'front' (show 0,1) or 'back' (show 2,3)
+    let correctAnswerText = ''; // 2 characters
+
+    // DOM Elements Reference
+    const startScreen = document.getElementById('start-screen');
+    const quizScreen = document.getElementById('quiz-screen');
+    const resultScreen = document.getElementById('result-screen');
+    const explanationModal = document.getElementById('explanation-modal');
+
+    // Choice/Input mode switch UI
+    function selectInputMode(mode) {
+      selectedInputMode = mode;
+      const btnChoice = document.getElementById('mode-choice');
+      const btnInput = document.getElementById('mode-input');
+
+      if (mode === 'choice') {
+        btnChoice.className = 'py-3 px-3 rounded-xl border-2 font-bold text-sm transition text-center flex flex-col items-center gap-1 border-brand-500 bg-brand-50 text-brand-600';
+        btnInput.className = 'py-3 px-3 rounded-xl border-2 font-bold text-sm transition text-center flex flex-col items-center gap-1 border-slate-200 bg-white text-slate-600 hover:border-slate-300';
+      } else {
+        btnInput.className = 'py-3 px-3 rounded-xl border-2 font-bold text-sm transition text-center flex flex-col items-center gap-1 border-brand-500 bg-brand-50 text-brand-600';
+        btnChoice.className = 'py-3 px-3 rounded-xl border-2 font-bold text-sm transition text-center flex flex-col items-center gap-1 border-slate-200 bg-white text-slate-600 hover:border-slate-300';
+      }
+    }
+
+    // Go back to main start screen
+    function goToStartScreen() {
+      clearInterval(timerInterval);
+      explanationModal.classList.add('hidden');
+      quizScreen.classList.add('hidden');
+      quizScreen.classList.remove('flex');
+      resultScreen.classList.add('hidden');
+      startScreen.classList.remove('hidden');
+    }
+
+    // Utility: Shuffle Array
+    function shuffleArray(array) {
+      const arr = [...array];
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    // Start Game Initialization
+    function startGame() {
+      // Pick 10 random idioms
+      currentQuizList = shuffleArray(IDIOM_DATABASE).slice(0, 10);
+      currentQuestionIndex = 0;
+      score = 0;
+      secondsElapsed = 0;
+
+      // Reset Timer Display
+      document.getElementById('timer-display').innerText = '00:00';
+      clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        secondsElapsed++;
+        const mins = String(Math.floor(secondsElapsed / 60)).padStart(2, '0');
+        const secs = String(secondsElapsed % 60).padStart(2, '0');
+        document.getElementById('timer-display').innerText = `${mins}:${secs}`;
+      }, 1000);
+
+      // UI Screens Switching
+      startScreen.classList.add('hidden');
+      resultScreen.classList.add('hidden');
+      quizScreen.classList.remove('hidden');
+      quizScreen.classList.add('flex');
+
+      loadQuestion();
+    }
+
+    // Load Single Question
+    function loadQuestion() {
+      // Reset input fields
+      document.getElementById('text-answer-input').value = '';
+      
+      const qNumDisplay = document.getElementById('current-q-num');
+      const scoreDisplay = document.getElementById('score-display');
+      const progressBar = document.getElementById('progress-bar');
+      
+      qNumDisplay.innerText = currentQuestionIndex + 1;
+      scoreDisplay.innerText = score;
+      progressBar.style.width = `${((currentQuestionIndex + 1) / 10) * 100}%`;
+
+      currentIdiom = currentQuizList[currentQuestionIndex];
+      
+      // Randomly pick hint type: 'front' (give first 2 chars) or 'back' (give last 2 chars)
+      hintType = Math.random() < 0.5 ? 'front' : 'back';
+      
+      const hangulChars = currentIdiom.hangul.split('');
+      const hanjaChars = currentIdiom.hanja.split('');
+
+      const badge = document.getElementById('hint-type-badge');
+
+      if (hintType === 'front') {
+        badge.innerText = '앞 2글자 힌트 (뒷글자 맞추기)';
+        badge.className = 'inline-block bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1 rounded-full';
+        
+        correctAnswerText = hangulChars[2] + hangulChars[3];
+
+        // Slot 1, 2 visible
+        setSlot(1, hangulChars[0], hanjaChars[0], true);
+        setSlot(2, hangulChars[1], hanjaChars[1], true);
+        // Slot 3, 4 hidden
+        setSlot(3, '?', '?', false);
+        setSlot(4, '?', '?', false);
+      } else {
+        badge.innerText = '뒤 2글자 힌트 (앞글자 맞추기)';
+        badge.className = 'inline-block bg-blue-100 text-blue-800 text-xs font-bold px-3 py-1 rounded-full';
+
+        correctAnswerText = hangulChars[0] + hangulChars[1];
+
+        // Slot 1, 2 hidden
+        setSlot(1, '?', '?', false);
+        setSlot(2, '?', '?', false);
+        // Slot 3, 4 visible
+        setSlot(3, hangulChars[2], hanjaChars[2], true);
+        setSlot(4, hangulChars[3], hanjaChars[3], true);
+      }
+
+      // Input Mode Toggle Rendering
+      const choiceArea = document.getElementById('choice-area');
+      const inputArea = document.getElementById('input-area');
+
+      if (selectedInputMode === 'choice') {
+        choiceArea.classList.remove('hidden');
+        inputArea.classList.add('hidden');
+        generateMultipleChoices();
+      } else {
+        choiceArea.classList.add('hidden');
+        inputArea.classList.remove('hidden');
+        setTimeout(() => document.getElementById('text-answer-input').focus(), 100);
+      }
+    }
+
+    // Helper: Set Slot content & styling
+    function setSlot(num, hangul, hanja, isHint) {
+      const slot = document.getElementById(`char-${num}`);
+      const hangulEl = document.getElementById(`hangul-${num}`);
+      const hanjaEl = document.getElementById(`hanja-${num}`);
+
+      hangulEl.innerText = hangul;
+      hanjaEl.innerText = hanja;
+
+      if (isHint) {
+        slot.className = "bg-amber-100/70 border-2 border-amber-300 rounded-2xl aspect-square flex flex-col items-center justify-center p-1 shadow-sm";
+        hangulEl.className = "text-2xl sm:text-3xl font-extrabold text-amber-950";
+        hanjaEl.className = "text-xs text-amber-700/80 font-serif";
+      } else {
+        slot.className = "bg-slate-100 border-2 border-dashed border-slate-300 rounded-2xl aspect-square flex flex-col items-center justify-center p-1";
+        hangulEl.className = "text-2xl sm:text-3xl font-extrabold text-slate-400";
+        hanjaEl.className = "text-xs text-slate-300 font-serif";
+      }
+    }
+
+    // Generate Multiple Choice Options
+    function generateMultipleChoices() {
+      const choices = [correctAnswerText];
+
+      // Distractors from other idioms
+      while (choices.length < 4) {
+        const randomIdiom = IDIOM_DATABASE[Math.floor(Math.random() * IDIOM_DATABASE.length)];
+        let candidate = '';
+        if (hintType === 'front') {
+          candidate = randomIdiom.hangul.substring(2, 4);
+        } else {
+          candidate = randomIdiom.hangul.substring(0, 2);
+        }
+
+        if (!choices.includes(candidate)) {
+          choices.push(candidate);
+        }
+      }
+
+      const shuffledChoices = shuffleArray(choices);
+
+      for (let i = 0; i < 4; i++) {
+        const btnText = document.getElementById(`choice-${i}-text`);
+        btnText.innerText = shuffledChoices[i];
+        btnText.parentElement.dataset.answer = shuffledChoices[i];
+      }
+    }
+
+    // Submit Multiple Choice Answer
+    function submitChoice(index) {
+      const selectedBtn = document.querySelectorAll('.choice-btn')[index];
+      const selectedAnswer = selectedBtn.dataset.answer;
+      evaluateAnswer(selectedAnswer);
+    }
+
+    // Submit Typing Answer
+    function submitTextAnswer() {
+      const inputEl = document.getElementById('text-answer-input');
+      const val = inputEl.value.trim();
+      if (!val) return;
+      evaluateAnswer(val);
+    }
+
+    // Handle Enter Key press in typing input
+    document.getElementById('text-answer-input').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        submitTextAnswer();
+      }
+    });
+
+    // Evaluate Answer correctness & show feedback modal
+    function evaluateAnswer(userAnswer) {
+      const isCorrect = (userAnswer === correctAnswerText);
+
+      const feedbackBadge = document.getElementById('modal-feedback-badge');
+      const feedbackIcon = document.getElementById('modal-feedback-icon');
+      const feedbackTitle = document.getElementById('modal-feedback-title');
+
+      if (isCorrect) {
+        score += 10;
+        document.getElementById('score-display').innerText = score;
+
+        feedbackBadge.className = "inline-flex items-center justify-center w-16 h-16 rounded-full mb-1 bg-emerald-100 text-emerald-600";
+        feedbackIcon.className = "fa-solid fa-circle-check text-3xl";
+        feedbackTitle.innerText = "정답입니다! 🎉";
+        feedbackTitle.className = "text-xl font-extrabold text-emerald-600 mb-1";
+      } else {
+        feedbackBadge.className = "inline-flex items-center justify-center w-16 h-16 rounded-full mb-1 bg-rose-100 text-rose-600";
+        feedbackIcon.className = "fa-solid fa-circle-xmark text-3xl";
+        feedbackTitle.innerText = "아쉽네요, 틀렸습니다!";
+        feedbackTitle.className = "text-xl font-extrabold text-rose-600 mb-1";
+      }
+
+      // Populate Explanation Modal Data
+      document.getElementById('modal-hanja').innerText = currentIdiom.hanja;
+      document.getElementById('modal-hangul').innerText = currentIdiom.hangul;
+      document.getElementById('modal-meaning').innerText = currentIdiom.meaning;
+
+      // Show Modal
+      explanationModal.classList.remove('hidden');
+    }
+
+    // Proceed to Next Question or Result Screen
+    function nextQuestion() {
+      explanationModal.classList.add('hidden');
+      currentQuestionIndex++;
+
+      if (currentQuestionIndex < 10) {
+        loadQuestion();
+      } else {
+        finishGame();
+      }
+    }
+
+    // Finish Game & Render Results Screen
+    function finishGame() {
+      clearInterval(timerInterval);
+
+      quizScreen.classList.add('hidden');
+      quizScreen.classList.remove('flex');
+      resultScreen.classList.remove('hidden');
+
+      document.getElementById('final-score').innerText = score;
+      
+      const mins = String(Math.floor(secondsElapsed / 60)).padStart(2, '0');
+      const secs = String(secondsElapsed % 60).padStart(2, '0');
+      document.getElementById('final-time').innerText = `${mins}:${secs}`;
+
+      const evalMsg = document.getElementById('final-eval-msg');
+      if (score === 100) {
+        evalMsg.innerText = "만점입니다! 사자성어에 통달하셨군요! 🥇👑";
+      } else if (score >= 70) {
+        evalMsg.innerText = "훌륭합니다! 높은 사자성어 지식을 가지고 계시네요! 🎓👍";
+      } else if (score >= 40) {
+        evalMsg.innerText = "좋은 시도입니다! 조금만 더 연습해 보세요! 😊";
+      } else {
+        evalMsg.innerText = "다음에는 더 좋은 결과를 얻을 수 있을 거예요! 화이팅! 💪";
+      }
+    }
+  </script>
+</body>
+</html>
